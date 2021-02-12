@@ -1,35 +1,39 @@
-# code does not yet work due to matrix dim. Also have not cited the data yet. 
+# data from our world in data (OWID)
 
-df <- cbind(owid.covid.data$V3,owid.covid.data$V6)
+library(ggplot2)
 
-df_den <- df[230:376,1:2]
+df <- cbind(owid.covid.data$V3,owid.covid.data$V6, owid.covid.data$V9)
 
-df_swe <- df[606:nrow(df),1:2]
+df_den <- df[230:376,1:3]
+
+df_swe <- df[606:nrow(df),1:3]
 
 df<-cbind(df_den,df_swe)
 
-df[,2] <- as.numeric(df[,2])
-
-df[,4] <- as.numeric(df[,4])
+df[,c(2,3)] <- as.numeric(df[,c(2,3)])
 
 
-df_2<-df[!(df[,4]==0),]
+df[,c(5,6)] <- as.numeric(df[,c(5,6)])
 
 
+df_2<-df[!(df[,5]==0),]
 
 
+X <- as.matrix(df_2[,c(2,3,5,6)])
 
-X <- as.matrix(df_2[,c(2,4)])
+X <- matrix(0,158,2)
 
-X <- matrix(0,158,1)
+X[1:79,1:2] <- df_2[,2:3]
 
-X[1:79] <- df_2[,2]
-
-X[80:158,] <- df_2[,4]
-
-X <- as.data.frame(as.numeric(unlist(X)))
+X[80:158,1:2] <- df_2[,5:6]
 
 X <- as.matrix(X)
+
+class(X) <- "numeric"
+
+storage.mode(X) <- "numeric"
+
+X
 
 C <- sample(1:2, nrow(X), replace = TRUE)
 
@@ -55,7 +59,7 @@ compute_cluster_means<- function(x,c){
   
   mat <- cbind(matrix(1:length(unique(c))),mat)
   
-  colnames(mat) <- c("C", "New cases")
+  colnames(mat) <- c("C", "New cases","New deaths")
   
   return(mat)
 }  
@@ -64,34 +68,34 @@ m <- compute_cluster_means(X, C)
 m
 
 compute_cluster_encoding<- function(x, m){
+  
+  d <- matrix(NA,1,nrow(m))
+  
+  f <- vector()
+  
+  m <- m[,-1]
+  
+  for (i in 1:nrow(x)) {
     
-    d <- matrix(NA,1,1)
-    
-    f <- vector()
-    
-    m <- m[,-1]
-    
-    for (i in 1:nrow(x)) {
+    for (j in 1:nrow(m)) {
       
-      for (j in 1:1) {
+      for (k in 1:ncol(m)) {
         
-        for (k in 1:2) {
-        
-          d[1,j]<-sum(abs((x[i,k]-m[j,k])^2))
-          
-        }
+        d[1,j]<-sum(abs((x[i,k]-m[j,k])^2))
         
       }
       
-      f[i] <- which.min(d)
-      
-    }  
+    }
     
-    return(f)
+    f[i] <- which.min(d)
     
-  } 
-C <- compute_cluster_encoding(X, m)
+  }  
+  
+  return(f)
+  
+} 
 
+C <- compute_cluster_encoding(X, m)
 
 k_means <- function(x,k){
   
@@ -111,7 +115,7 @@ k_means <- function(x,k){
   
   return(C=C)
   
-  
+}
 
 
 X <- as.matrix(X)
@@ -128,3 +132,18 @@ k_means_W <- function(x,c){
   }
   result <- sum(colSums(mat))
   
+  return(result=result)
+}  
+
+k_means_W(X, C)
+
+
+X <- as.matrix(X)
+
+X_k_2<-k_means(X,k=2)
+
+k_means_W(X, X_k_2)
+
+ggplot(as.data.frame(X), 
+       aes(x=X[,1],y=X[,2], color=as.factor(X_k_2))) + 
+  geom_point()
