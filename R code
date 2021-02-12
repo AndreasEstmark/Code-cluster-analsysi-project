@@ -1,0 +1,130 @@
+# code does not yet work due to matrix dim. Also have not cited the data yet. 
+
+df <- cbind(owid.covid.data$V3,owid.covid.data$V6)
+
+df_den <- df[230:376,1:2]
+
+df_swe <- df[606:nrow(df),1:2]
+
+df<-cbind(df_den,df_swe)
+
+df[,2] <- as.numeric(df[,2])
+
+df[,4] <- as.numeric(df[,4])
+
+
+df_2<-df[!(df[,4]==0),]
+
+
+
+set.seed(4711)
+
+X <- as.matrix(df_2[,c(2,4)])
+
+X <- matrix(0,158,1)
+
+X[1:79] <- df_2[,2]
+
+X[80:158,] <- df_2[,4]
+
+X <- as.data.frame(as.numeric(unlist(X)))
+
+X <- as.matrix(X)
+
+C <- sample(1:2, nrow(X), replace = TRUE)
+
+compute_cluster_means<- function(x,c){
+  
+  x <- as.data.frame(x)
+  
+  mat <- matrix(NA,nrow=length(unique(c)),ncol=ncol(x))
+  
+  for (j in 1:length(unique(c))) {
+    
+    a <- (cbind(x,c))
+    
+    a <- a %>% filter(c==j) 
+    
+    for (i in 1:ncol(x)) {
+      
+      mat[j,i]<- mean(a[,i])
+      
+    }
+    
+  }
+  
+  mat <- cbind(matrix(1:length(unique(c))),mat)
+  
+  colnames(mat) <- c("C", "New cases")
+  
+  return(mat)
+}  
+
+m <- compute_cluster_means(X, C)
+m
+
+compute_cluster_encoding<- function(x, m){
+    
+    d <- matrix(NA,1,1)
+    
+    f <- vector()
+    
+    m <- m[,-1]
+    
+    for (i in 1:nrow(x)) {
+      
+      for (j in 1:1) {
+        
+        for (k in 1:2) {
+        
+          d[1,j]<-sum(abs((x[i,k]-m[j,k])^2))
+          
+        }
+        
+      }
+      
+      f[i] <- which.min(d)
+      
+    }  
+    
+    return(f)
+    
+  } 
+C <- compute_cluster_encoding(X, m)
+
+
+k_means <- function(x,k){
+  
+  C <- sample(1:k, nrow(x), replace=TRUE)
+  
+  C_1 <- vector(length = length(C))
+  
+  while (!identical(C,C_1)) {
+    
+    C_1 <- C
+    
+    m <- compute_cluster_means(x, C_1)
+    
+    C <- compute_cluster_encoding(x, m)
+    
+  }
+  
+  return(C=C)
+  
+  
+
+set.seed(4711)
+X <- as.matrix(X)
+C <- sample(1:3, nrow(X), replace = TRUE)
+k_means_W <- function(x,c){
+  df <- as.data.frame(cbind(x,c))
+  mat <- matrix(NA ,nrow=max(c), ncol=ncol(x))
+  for(i in 1:ncol(x)){
+    for(j in 1:max(c)){
+      df <- as.data.frame(cbind(x,c))
+      df <- df %>% filter(c==j)
+      mat[j,i] <- sum(nrow(df))* sum(abs((df[,i] - mean(df[,i])))^2)
+    }
+  }
+  result <- sum(colSums(mat))
+  
