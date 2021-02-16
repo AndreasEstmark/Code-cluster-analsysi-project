@@ -119,17 +119,28 @@ k_means <- function(x,k){
 
 
 X <- as.matrix(X)
+
 C <- sample(1:3, nrow(X), replace = TRUE)
+
 k_means_W <- function(x,c){
+
   df <- as.data.frame(cbind(x,c))
+  
   mat <- matrix(NA ,nrow=max(c), ncol=ncol(x))
+  
   for(i in 1:ncol(x)){
+  
     for(j in 1:max(c)){
+    
       df <- as.data.frame(cbind(x,c))
+      
       df <- df %>% filter(c==j)
+      
       mat[j,i] <- sum(nrow(df))* sum(abs((df[,i] - mean(df[,i])))^2)
+   
     }
   }
+  
   result <- sum(colSums(mat))
   
   return(result=result)
